@@ -7,8 +7,6 @@ RUN --mount=type=cache,target=$HOME/.bun/install/cache \
     bun install --frozen-lockfile --production
 
 COPY --chown=bun:bun src/ /usr/src/app/src/
-COPY --chown=bun:bun migrations/ /usr/src/app/migrations
-COPY --chown=bun:bun drizzle.config.ts /usr/src/app/drizzle.config.ts
 COPY --chown=bun:bun entrypoint.sh /usr/src/app/entrypoint.sh
 
 RUN mkdir /usr/src/app/cache
