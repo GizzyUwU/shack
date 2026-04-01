@@ -3,7 +3,7 @@ import type { DeliveriesOrdersListFilteredResponse } from "../lib/shop.zod";
 import fs from "fs/promises";
 import path from "path";
 
-const CACHE_FILE = path.join(process.cwd(), ".deliveryCache.json");
+const CACHE_FILE = path.join(process.cwd(), "./cache/deliveryCache.json");
 
 type CachedDeliveryStatus = {
     id: string;
