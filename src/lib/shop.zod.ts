@@ -22,6 +22,20 @@ export const deliveriesOrdersListFilteredRequestSchema = graphqlRequestSchema
 		message: 'Expected a DeliveriesOrdersListFiltered GraphQL query.',
 	});
 
+export const refreshAccessTokenVariablesSchema = zod.object({
+	refreshToken: zod.string().min(1),
+});
+
+export const refreshAccessTokenRequestSchema = graphqlRequestSchema
+	.extend({
+		operationName: zod.literal('RefreshAccessToken'),
+		variables: refreshAccessTokenVariablesSchema,
+	})
+	.refine((value) => value.query.includes('mutation RefreshAccessToken'), {
+		path: ['query'],
+		message: 'Expected a RefreshAccessToken GraphQL mutation.',
+	});
+
 const moneyV2Schema = zod.object({
 	amount: zod.string(),
 	currencyCode: zod.string(),
@@ -264,6 +278,43 @@ export const deliveriesOrdersListFilteredResponseSchema = zod.object({
 	data: deliveriesOrdersListFilteredDataSchema,
 });
 
+export const refreshAccessTokenResponseSchema = zod.object({
+	data: zod
+		.object({
+			accessTokenRefresh: zod
+				.object({
+					authPayload: zod
+						.object({
+							accessToken: zod.string().min(1),
+							refreshToken: zod.string().min(1),
+							expiresIn: zod.number().int().positive().optional(),
+							__typename: zod.string().optional(),
+						})
+						.nullable()
+						.optional(),
+					userErrors: zod
+						.array(
+							zod.object({
+								message: zod.string(),
+								__typename: zod.string().optional(),
+							}),
+						)
+						.optional(),
+					__typename: zod.string().optional(),
+				})
+				.nullable()
+				.optional(),
+		})
+		.optional(),
+	errors: zod
+		.array(
+			zod.object({
+				message: zod.string(),
+			}),
+		)
+		.optional(),
+});
+
 export type GraphqlRequest = zod.infer<typeof graphqlRequestSchema>;
 export type DeliveriesOrdersListFilteredVariables = zod.infer<
 	typeof deliveriesOrdersListFilteredVariablesSchema
@@ -271,9 +322,18 @@ export type DeliveriesOrdersListFilteredVariables = zod.infer<
 export type DeliveriesOrdersListFilteredRequest = zod.infer<
 	typeof deliveriesOrdersListFilteredRequestSchema
 >;
+export type RefreshAccessTokenVariables = zod.infer<
+	typeof refreshAccessTokenVariablesSchema
+>;
+export type RefreshAccessTokenRequest = zod.infer<
+	typeof refreshAccessTokenRequestSchema
+>;
 export type DeliveriesOrdersListFilteredData = zod.infer<
 	typeof deliveriesOrdersListFilteredDataSchema
 >;
 export type DeliveriesOrdersListFilteredResponse = zod.infer<
 	typeof deliveriesOrdersListFilteredResponseSchema
+>;
+export type RefreshAccessTokenResponse = zod.infer<
+	typeof refreshAccessTokenResponseSchema
 >;

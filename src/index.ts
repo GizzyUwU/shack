@@ -100,7 +100,12 @@ function checkEnvs(name: string, optional: boolean): string {
 }
 
 export const shopClient = checkEnvs("SHOP_TOKEN", false)
-  ? new Shop(process.env["SHOP_TOKEN"]!, logger)
+  && checkEnvs("SHOP_REFRESH_TOKEN", false)
+  ? new Shop(
+      process.env["SHOP_TOKEN"]!,
+      process.env["SHOP_REFRESH_TOKEN"]!,
+      logger,
+    )
   : null;
 
 const app = new App({
