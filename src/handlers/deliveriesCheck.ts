@@ -1,5 +1,4 @@
 import type { RequestHandler } from "..";
-import type { DeliveriesOrdersListFilteredResponse } from "../lib/shop.zod";
 import fs from "fs/promises";
 import path from "path";
 
@@ -59,7 +58,6 @@ async function fetchAllNodes(ctx: RequestHandler) {
         if (!deliveriesOrdersList) {
             return null;
         }
-
         allNodes.push(...deliveriesOrdersList.nodes);
 
         const pageInfo = deliveriesOrdersList.pageInfo;
@@ -85,6 +83,29 @@ function getCurrentDeliveryStatuses(
                 : null,
             deliveredAt: node.deliveredAt ?? null,
         }));
+}
+
+function formatDeliveredAt(deliveredAt: string | null): string {
+    if (!deliveredAt) {
+        return "unknown";
+    }
+
+    const parsedDate = new Date(deliveredAt);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return "unknown";
+    }
+
+    return new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/London",
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZoneName: "short",
+    }).format(parsedDate);
 }
 
 export default {
@@ -136,6 +157,24 @@ export default {
 
             if (previousData && !nextData) {
                 hasChanges = true;
+
+                const movedDelivery = nodes.find(
+                    (node) =>
+                        node.__typename === "Delivery" &&
+                        node.id === id &&
+                        node.state === "PAST" &&
+                        node.status === "DELIVERED",
+                );
+
+                if (movedDelivery && process.env["CHANNEL"]) {
+                    const deliveredAtText = formatDeliveredAt(movedDelivery.deliveredAt ?? null);
+
+                    await ctx.client.chat.postMessage({
+                        channel: process.env["CHANNEL"] ?? "",
+                        text: `${previousData.deliveryName ?? "A delivery"} has been delivered! Delivery time was ${deliveredAtText}`,
+                    });
+                }
+
                 continue;
             }
 
@@ -150,9 +189,11 @@ export default {
                 hasChanges = true;
 
                 if (statusChanged && nextData.status === "DELIVERED") {
+                    const deliveredAtText = formatDeliveredAt(nextData.deliveredAt);
+
                     await ctx.client.chat.postMessage({
                         channel: process.env["CHANNEL"] ?? "",
-                        text: `${nextData.deliveryName} has been delivered! Delivery time was at ${nextData.deliveredAt}`,
+                        text: `${nextData.deliveryName} has been delivered! Delivery time was ${deliveredAtText}`,
                     })
                 } else if (statusChanged) {
                     await ctx.client.chat.postMessage({
